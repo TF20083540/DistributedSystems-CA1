@@ -5,7 +5,7 @@ import Ajv from "ajv";
 import schema from "../shared/types.schema.json";
 
 const ajv = new Ajv();
-const isValidBodyParams = ajv.compile(schema.definitions["Game"] || {});
+
 const ddbDocClient = createDDbDocClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
@@ -23,25 +23,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
-       // NEW
-       if (!isValidBodyParams(body)) {
-        return {
-          statusCode: 500,
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            message: `Incorrect type. Must match Game schema`,
-            schema: schema.definitions["Game"],
-          }),
-        };
-      }
+    //const id = body.id
+
 
     // Unchanged
     const commandOutput = await ddbDocClient.send(
       new DeleteCommand({
         TableName: process.env.TABLE_NAME,
-        Key: Object,
+        Key: {id: body.id},
       })
     );
     return {

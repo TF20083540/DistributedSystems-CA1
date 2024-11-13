@@ -135,6 +135,14 @@ export class GameAPIStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getGameByIdFn, { proxy: true })
     );
+    
+    gamesEndpoint.addMethod(
+      "DELETE",
+      new apig.LambdaIntegration(deleteGameFn, { proxy: true }),
+      {
+        authorizationType: apig.AuthorizationType.IAM
+      }
+    );
 
     //Add movieelete function to the endpoint.
     //Then add permissions.
@@ -144,6 +152,7 @@ export class GameAPIStack extends cdk.Stack {
         gamesTable.grantReadData(getGameByIdFn)
         gamesTable.grantReadData(getAllGamesFn)
         gamesTable.grantReadWriteData(newGameFn)    
+        gamesTable.grantReadWriteData(deleteGameFn)
         
       }
     }
