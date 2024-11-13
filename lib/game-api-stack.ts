@@ -85,6 +85,19 @@ export class GameAPIStack extends cdk.Stack {
             REGION: "eu-west-1",
           },
         });
+
+        const updateGameFn = new lambdanode.NodejsFunction(this, "UpdateGameFn", {
+          architecture: lambda.Architecture.ARM_64,
+          runtime: lambda.Runtime.NODEJS_16_X,
+          entry: `${__dirname}/../lambdas/updateGame.ts`,
+          timeout: cdk.Duration.seconds(10),
+          memorySize: 128,
+          environment: {
+            TABLE_NAME: gamesTable.tableName,
+            REGION: "eu-west-1",
+          },
+
+        });
         
         new custom.AwsCustomResource(this, "gamesddbInitData", {
           onCreate: {
@@ -135,10 +148,18 @@ export class GameAPIStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getGameByIdFn, { proxy: true })
     );
-    
+
     gamesEndpoint.addMethod(
       "DELETE",
       new apig.LambdaIntegration(deleteGameFn, { proxy: true }),
+      {
+        authorizationType: apig.AuthorizationType.IAM
+      }
+    );
+
+    gamesEndpoint.addMethod(
+      "PUT",
+      new apig.LambdaIntegration(updateGameFn, {proxy: true}),
       {
         authorizationType: apig.AuthorizationType.IAM
       }
@@ -153,6 +174,7 @@ export class GameAPIStack extends cdk.Stack {
         gamesTable.grantReadData(getAllGamesFn)
         gamesTable.grantReadWriteData(newGameFn)    
         gamesTable.grantReadWriteData(deleteGameFn)
+        gamesTable.grantReadWriteData(updateGameFn)
         
       }
     }
