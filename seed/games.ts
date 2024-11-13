@@ -1,6 +1,6 @@
 import {Game} from '../shared/types'
 
-export const movies : Game[] = [
+export const games : Game[] = [
   {
     adult: false,
     genre_ids: [878],
