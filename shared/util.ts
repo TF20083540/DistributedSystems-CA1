@@ -1,6 +1,7 @@
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { Game } from "./types";
 
+
 export const generateGameItem = (game: Game) => {
   return {
     PutRequest: {
@@ -14,3 +15,4 @@ export const generateBatch = (data: Game[]) => {
     return generateGameItem(e);
   });
 };
+

@@ -21,6 +21,13 @@ export class GameAPIStack extends cdk.Stack {
       tableName: "Games",
     });
 
+    const userTable = new dynamodb.Table(this, "UserTable", {
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      partitionKey: { name: "id", type: dynamodb.AttributeType.NUMBER },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      tableName: "Users",
+    });
+
     
     // Functions 
     const getGameByIdFn = new lambdanode.NodejsFunction(
@@ -53,7 +60,7 @@ export class GameAPIStack extends cdk.Stack {
             REGION: 'eu-west-1',
           },
         }
-        );
+      );
 
         const newGameFn = new lambdanode.NodejsFunction(this, "AddGameFn", {
           architecture: lambda.Architecture.ARM_64,
@@ -94,12 +101,10 @@ export class GameAPIStack extends cdk.Stack {
             resources: [gamesTable.tableArn],
           }),
         });
-        
-
 
             // REST API 
     const api = new apig.RestApi(this, "GamesAPI", {
-      description: "rest api",
+      description: "games api",
       deployOptions: {
         stageName: "dev",
       },
@@ -119,7 +124,10 @@ export class GameAPIStack extends cdk.Stack {
 
     gamesEndpoint.addMethod(
       "POST",
-      new apig.LambdaIntegration(newGameFn, { proxy: true })
+      new apig.LambdaIntegration(newGameFn, { proxy: true }),
+      {
+        authorizationType: apig.AuthorizationType.IAM
+      }
     );
 
     const gameEndpoint = gamesEndpoint.addResource("{gameId}");
