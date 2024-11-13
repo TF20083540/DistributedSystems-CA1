@@ -6,100 +6,100 @@ import * as custom from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
-import { movies } from "../seed/movies";
+import { games } from "../seed/games";
 import * as apig from "aws-cdk-lib/aws-apigateway";
 
-export class RestAPIStack extends cdk.Stack {
+export class GameAPIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // Tables 
-    const moviesTable = new dynamodb.Table(this, "MoviesTable", {
+    const gamesTable = new dynamodb.Table(this, "GamesTable", {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       partitionKey: { name: "id", type: dynamodb.AttributeType.NUMBER },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      tableName: "Movies",
+      tableName: "Games",
     });
 
     
     // Functions 
-    const getMovieByIdFn = new lambdanode.NodejsFunction(
+    const getGameByIdFn = new lambdanode.NodejsFunction(
       this,
       "GetMovieByIdFn",
       {
         architecture: lambda.Architecture.ARM_64,
         runtime: lambda.Runtime.NODEJS_18_X,
-        entry: `${__dirname}/../lambdas/getMovieById.ts`,
+        entry: `${__dirname}/../lambdas/getGameById.ts`,
         timeout: cdk.Duration.seconds(10),
         memorySize: 128,
         environment: {
-          TABLE_NAME: moviesTable.tableName,
+          TABLE_NAME: gamesTable.tableName,
           REGION: 'eu-west-1',
         },
       }
-      );
+    );
       
-      const getAllMoviesFn = new lambdanode.NodejsFunction(
+      const getAllGamesFn = new lambdanode.NodejsFunction(
         this,
-        "GetAllMoviesFn",
+        "GetAllGamesFn",
         {
           architecture: lambda.Architecture.ARM_64,
           runtime: lambda.Runtime.NODEJS_18_X,
-          entry: `${__dirname}/../lambdas/getAllMovies.ts`,
+          entry: `${__dirname}/../lambdas/getAllGames.ts`,
           timeout: cdk.Duration.seconds(10),
           memorySize: 128,
           environment: {
-            TABLE_NAME: moviesTable.tableName,
+            TABLE_NAME: gamesTable.tableName,
             REGION: 'eu-west-1',
           },
         }
         );
 
-        const newMovieFn = new lambdanode.NodejsFunction(this, "AddMovieFn", {
+        const newGameFn = new lambdanode.NodejsFunction(this, "AddGameFn", {
           architecture: lambda.Architecture.ARM_64,
           runtime: lambda.Runtime.NODEJS_16_X,
-          entry: `${__dirname}/../lambdas/addMovie.ts`,
+          entry: `${__dirname}/../lambdas/addGame.ts`,
           timeout: cdk.Duration.seconds(10),
           memorySize: 128,
           environment: {
-            TABLE_NAME: moviesTable.tableName,
+            TABLE_NAME: gamesTable.tableName,
             REGION: "eu-west-1",
           },
         });
 
-        const deleteMovieFn = new lambdanode.NodejsFunction(this, "DeleteMovieFn", {
+        const deleteGameFn = new lambdanode.NodejsFunction(this, "DeleteGameFn", {
           architecture: lambda.Architecture.ARM_64,
           runtime: lambda.Runtime.NODEJS_16_X,
-          entry: `${__dirname}/../lambdas/deleteMovie.ts`,
+          entry: `${__dirname}/../lambdas/deleteGame.ts`,
           timeout: cdk.Duration.seconds(10),
           memorySize: 128,
           environment: {
-            TABLE_NAME: moviesTable.tableName,
+            TABLE_NAME: gamesTable.tableName,
             REGION: "eu-west-1",
           },
         });
         
-        new custom.AwsCustomResource(this, "moviesddbInitData", {
+        new custom.AwsCustomResource(this, "gamesddbInitData", {
           onCreate: {
             service: "DynamoDB",
             action: "batchWriteItem",
             parameters: {
               RequestItems: {
-                [moviesTable.tableName]: generateBatch(movies),
+                [gamesTable.tableName]: generateBatch(games),
               },
             },
-            physicalResourceId: custom.PhysicalResourceId.of("moviesddbInitData"), //.of(Date.now().toString()),
+            physicalResourceId: custom.PhysicalResourceId.of("gamesddbInitData"), //.of(Date.now().toString()),
           },
           policy: custom.AwsCustomResourcePolicy.fromSdkCalls({
-            resources: [moviesTable.tableArn],
+            resources: [gamesTable.tableArn],
           }),
         });
         
 
 
             // REST API 
-    const api = new apig.RestApi(this, "RestAPI", {
-      description: "demo api",
+    const api = new apig.RestApi(this, "GamesAPI", {
+      description: "rest api",
       deployOptions: {
         stageName: "dev",
       },
@@ -111,21 +111,21 @@ export class RestAPIStack extends cdk.Stack {
       },
     });
 
-    const moviesEndpoint = api.root.addResource("movies");
-    moviesEndpoint.addMethod(
+    const gamesEndpoint = api.root.addResource("games");
+    gamesEndpoint.addMethod(
       "GET",
-      new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
+      new apig.LambdaIntegration(getAllGamesFn, { proxy: true })
     );
 
-    moviesEndpoint.addMethod(
+    gamesEndpoint.addMethod(
       "POST",
-      new apig.LambdaIntegration(newMovieFn, { proxy: true })
+      new apig.LambdaIntegration(newGameFn, { proxy: true })
     );
 
-    const movieEndpoint = moviesEndpoint.addResource("{movieId}");
-    movieEndpoint.addMethod(
+    const gameEndpoint = gamesEndpoint.addResource("{gameId}");
+    gameEndpoint.addMethod(
       "GET",
-      new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
+      new apig.LambdaIntegration(getGameByIdFn, { proxy: true })
     );
 
     //Add movieelete function to the endpoint.
@@ -133,9 +133,9 @@ export class RestAPIStack extends cdk.Stack {
 
 
             // Permissions 
-        moviesTable.grantReadData(getMovieByIdFn)
-        moviesTable.grantReadData(getAllMoviesFn)
-        moviesTable.grantReadWriteData(newMovieFn)    
+        gamesTable.grantReadData(getGameByIdFn)
+        gamesTable.grantReadData(getAllGamesFn)
+        gamesTable.grantReadWriteData(newGameFn)    
         
       }
     }

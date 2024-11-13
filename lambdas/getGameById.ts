@@ -9,22 +9,22 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {    
   try {
     console.log("[EVENT]", JSON.stringify(event));
     const parameters  = event?.pathParameters;
-    const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
+    const gameId = parameters?.gameId ? parseInt(parameters.gameId) : undefined;
 
-    if (!movieId) {
+    if (!gameId) {
       return {
         statusCode: 404,
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Missing movie Id" }),
+        body: JSON.stringify({ Message: "Missing game Id" }),
       };
     }
 
     const commandOutput = await ddbDocClient.send(
       new GetCommand({
         TableName: process.env.TABLE_NAME,
-        Key: { id: movieId },
+        Key: { id: gameId },
       })
     );
     console.log("GetCommand response: ", commandOutput);
@@ -34,7 +34,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {    
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Invalid movie Id" }),
+        body: JSON.stringify({ Message: "Invalid game Id" }),
       };
     }
     const body = {

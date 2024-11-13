@@ -1,11 +1,11 @@
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import Ajv from "ajv";
 import schema from "../shared/types.schema.json";
 
 const ajv = new Ajv();
-const isValidBodyParams = ajv.compile(schema.definitions["Movie"] || {});
+const isValidBodyParams = ajv.compile(schema.definitions["Game"] || {});
 const ddbDocClient = createDDbDocClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
@@ -31,17 +31,17 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            message: `Incorrect type. Must match Movie schema`,
-            schema: schema.definitions["Movie"],
+            message: `Incorrect type. Must match Game schema`,
+            schema: schema.definitions["Game"],
           }),
         };
       }
 
     // Unchanged
     const commandOutput = await ddbDocClient.send(
-      new PutCommand({
+      new DeleteCommand({
         TableName: process.env.TABLE_NAME,
-        Item: body,
+        Key: Object,
       })
     );
     return {
@@ -49,7 +49,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ message: "Movie added" }),
+      body: JSON.stringify({ message: "Game successfully deleted." }),
     };
   } catch (error: any) {
     console.log(JSON.stringify(error));

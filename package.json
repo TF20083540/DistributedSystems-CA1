@@ -1,8 +1,8 @@
 {
-  "name": "simple-app",
+  "name": "rest-app",
   "version": "0.1.0",
   "bin": {
-    "simple-app": "bin/simple-app.js"
+    "rest-app": "bin/rest-app.js"
   },
   "scripts": {
     "build": "tsc",
